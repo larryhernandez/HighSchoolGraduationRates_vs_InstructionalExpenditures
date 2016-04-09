@@ -1,0 +1,147 @@
+---
+title: 'Stat 333 Project: Exploratory Data Analysis'
+author: Larry Hernandez
+date: "February 18, 2016"
+output: html_document
+---
+  This project focuses on the relationship between 4-year adjusted high school graduation rates in 2013 and median household income (2013) by school district.
+
+  Exploratory data analysis reveals that these data need cleaning. About 66% of the graduation rates data are not reported as a single number. For California and Wisconsin, 30% and 75% of the graduation rates are reported as something other than a number (See Barchart). Inspection of these data using the 'View' function reveals that many graduation rates are reported as ranges (i.e. 80-84) or with some other notation, such as "GE95" or "PS", which is actually a code to indicate that the privacy of the students was maintained via reporting this code in lieu of an actual numerical graduation rate.  "GE95" might actually denote a 95% graduation rate; this is verifiable by visiting school district websites & gathering published graduation numbers. Other alphanumeric values in this dataset might need to further verification or they will simply be omitted.
+
+Some variables (ie, Limited English Proficient, various Ethnic categories, Total-reduced price Lunch Eligible Students) from the additional demographic data set (ElSi tableGenerator, NCES) have special symbols for their reported values, such as the dagger ($\dagger$), double-dagger ($\ddagger$), or minus sign (-), with meanings such as "not applicable", "Data do not meet NCES standards", and "indicates that data are missing", respectively. Occasionally a value is reported as "n/a" or other variant. Some numerical values for Ethnicity are preceded by an "=" sign and will have to be revised with a text-parsing function if Ethnicity is to be used in this analysis.
+
+A histogram of the median household income for all districts indicates that the data are centered about $50,000. This is reasonable for 2013, in which median household income was about $52,000.
+
+The histogram of the graduation rates (for the 35% which have been reported as a number) does not reveal any obvious problems, such as negative values or values greater than 100.
+
+The last two figures are scatterplots of 4-year high school graduation rates vs median household income (in units of thousands of dollars). Both scatterplots indicate that there is a non-linear relationship between the two variables, with very high graduation rates for school districts with median household income above $150k, and a lot more variability around $50k. This relationship appears to follow the same pattern for CA, WI, and the data set that excludes those two states. That is encouraging.
+
+Note: This rmarkdown file was generated with the option "warning=FALSE" to suppress warnings about coercion of NA values.
+```{r, echo=FALSE, warning=FALSE}
+setwd("E:/Math/STAT_333_AppliedRegression/Project/R_code/")
+library(varhandle)
+source("convert_factor_to_integer.R")
+# **********************************************************************************************#
+# LOAD SCHOOL DISTRICT DATA FROM THE WEB OR FROM DISK
+
+# Adjusted Cohort Graduation Rates (ACGR)
+#fn_grad_rates = "http://www2.ed.gov/about/inits/ed/edfacts/data-files/acgr-lea-sy2012-13.csv"
+fn_grad_rates = "E:/Math/STAT_333_AppliedRegression/Project/Data/graduation_rates/EdFacts/AGCR_2012_2013.csv"
+df_grad_rates <-read.csv(fn_grad_rates, header = TRUE, sep = ",", dec = ".", fill = TRUE)
+
+# Income and poverty data
+fn_income = "E:/Math/STAT_333_AppliedRegression/Project/Data/income/EDGE_2013/CDP03.2_105_USSchoolDistrictAll_217191048912.csv"
+df_income = read.csv(fn_income, header = TRUE, sep = "|", dec = ".", fill = TRUE)
+
+# Additional demographic data
+fn_demographic = "E:/Math/STAT_333_AppliedRegression/Project/Data/ElSi_Data/2012_2013_DistrictTable/Table3/ELSI_csv_export_6359074574246238708035_unzipped/ELSI_csv_export_6359074574246238708035.csv"
+df_demographics <-read.csv(fn_demographic, header = TRUE, sep = ",", dec = ".", skip = 6, fill = TRUE, nrows = 13619)
+
+# *******************************************************************************************#
+# DETERMINE DATA TYPES OF RELEVANT FIELDS
+
+# school district ID from graduation rates data-frame
+index_from_gr = 1
+id_from_gr = df_grad_rates$leaid12[index_from_gr]
+#class(id_from_gr)
+
+# school district ID from income data-frame
+index_from_demog = 1
+id_from_income = df_income$GeoId[index_from_demog]
+#class(id_from_income)
+
+# school district ID from demographic data-frame
+#index_from_demog = 164
+#id_from_demo = df_demographics$Agency.ID...NCES.Assigned..District..Latest.available.year[index_from_demog]
+#class(id_from_demo)
+# *********************************************************************************************** #
+ids_income = df_income$GeoId
+standard_id_length = 7
+ids_income_ints = lapply(ids_income, convert_factor_to_integer, desired_int_length = standard_id_length)
+
+# INSERT COLUMN FOR SCHOOL DISTRICT IDs IN NUMERIC FORM FOR INCOME DATA_FRAME
+df_income$district_id = ids_income_ints
+
+# CREATE NEW DATAFRAME BY CULLING GRAD_RATES DATA BASED district_id
+matching_indices = match(df_income$district_id, df_grad_rates$leaid12)
+#sum(is.na(matching_indices))
+matching_indices = na.omit(matching_indices)
+ed_data = df_grad_rates[matching_indices,]
+
+# INSERT INCOME VALUES FROM INCOME_DATAFRAME INTO THE COMPOSITE DATAFRAME my_data
+matching_indices = match(ed_data$leaid12, df_income$district_id)
+#sum(is.na(matching_indices))
+income_col = df_income$CDP03_16[matching_indices]   #CDP03_16 = median household income ($)
+# INSERT COLUMN 'median_household_income' IN NUMERIC FORM FOR INCOME DATA_FRAME
+ed_data$income = income_col
+
+# ************************************ PLOTS ********************************************************
+# Graduation rates vs income (CA, WI, rest of the data)
+med_income = ed_data$income / 1000
+raw_rates = ed_data$ALL_RATE_1213
+raw_rates = as.integer(unfactor(raw_rates))
+
+raw_rates_CA = ed_data$ALL_RATE_1213[ed_data$FIPST ==6]
+raw_rates_WI = ed_data$ALL_RATE_1213[ed_data$FIPST == 55]
+raw_rates_noCA_noWI = ed_data$ALL_RATE_1213[(ed_data$FIPST !=6) & (ed_data$FIPST != 55)]
+
+med_income_CA = ed_data$income[ed_data$FIPST == 6] / 1000
+med_income_WI = ed_data$income[ed_data$FIPST == 55] / 1000
+med_income_noCA_noWI = ed_data$income[(ed_data$FIPST !=6) & (ed_data$FIPST != 55)] / 1000
+
+rates_CA = as.integer(unfactor(raw_rates_CA))
+rates_WI = as.integer(unfactor(raw_rates_WI))
+
+# Calculate Rate of Non-Numerical Graduation Rates reported in the data
+num_naValues_in_CA_rates = sum(is.na(rates_CA))
+num_CA_rates = length(rates_CA)
+density_of_NA_in_CA_rates = num_naValues_in_CA_rates / num_CA_rates
+
+num_NA_rates_WI = sum(is.na(rates_WI))
+num_rates_WI = length(rates_WI)
+density_of_NA_in_WI_rates = num_NA_rates_WI / num_rates_WI
+
+num_NA_rates = sum(is.na(raw_rates))
+density_of_NA_in_ALLdata_rates = num_NA_rates / length(raw_rates)
+
+bar_heights = c(density_of_NA_in_CA_rates, density_of_NA_in_WI_rates, density_of_NA_in_ALLdata_rates)
+barplot(bar_heights*100, names.arg = c("CA","WI","All States"), ylim=c(0,100), xlab = "Data Set", ylab = "Pctg", col=c("blue","red","grey"),main = "Dirty Data: Percent of grad rates reported as non-number")
+
+# Histogram of raw income data
+hist(df_income$CDP03_16 / 1000, breaks = 50,main = "Median Household Income (All States)", xlim = c(0,250), xlab = "Median Household Income [$USD, thousands]")
+
+# Histogram of grad rates
+hist(as.integer(unfactor(ed_data$ALL_RATE_1213)), breaks = 50,main = "HS Graduation Rates (All States)", xlab = "4-yr Graduation Rates")
+
+# Scatterplots of Grad Rates vs Median Income for California, Wisconsin, And the rest of the data
+plot(med_income_CA,rates_CA, pch = 1, col="blue",main = "HS Graduation Rates vs Household Income", xlab = "Median Household Income [$USD, thousands]", ylab="4-yr Graduation Rate")
+points(med_income_WI,rates_WI, pch = 20, col="red",main = "HS Graduation Rates vs Median Income")
+legend("bottomright", "State", c("CA","WI"), pch=c(1,20), col=c("blue","red"))
+
+rates_noCA_noWI = as.integer(unfactor(raw_rates_noCA_noWI))
+plot(med_income_noCA_noWI,rates_noCA_noWI, main = "HS Graduation Rates vs Med Household Income", xlab = "Median Income [$USD, thousands]", ylab="4-yr Graduation Rate", pch = 1, col="green")
+points(med_income_CA,rates_CA, pch = 20, col="blue")
+legend("bottomright", "State", c("CA","Exclude CA+WI"), pch=c(20,1), col=c("blue","green"))
+
+# *********************************************************************************************** #
+# USE 'LAPPLY' & HOME-MADE FUNCTION TO CONVERT SCHOOL DISTRICT ID (CHAR FORMAT) TO INTEGER, BASED ON LENGTH OF CHARACTER
+#agency_ids_demo = df_demographics$Agency.ID...NCES.Assigned..District..Latest.available.year
+#standard_id_length = 7
+#ids_demo_ints = lapply(agency_ids_demo, convert_factor_to_integer, desired_int_length = standard_id_length)
+
+# INSERT COLUMN FOR SCHOOL DISTRICT IDs IN NUMERIC FORM FOR DEMOGRAPHIC DATA_FRAME
+#df_demographics$district_id = ids_demo_ints
+
+# MERGE THE DATA FRAMES INTO ONE DATA_FRAME
+#matching_indices = match(df_grad_rates$leaid12,df_demographics$district_id)
+#matching_indices = na.omit(matching_indices)
+#df_matches = df_demographics[matching_indices,]
+
+# *****************************************************************************************************************#
+# DEEPER CLEANING OF DATA FRAMES
+# [1] Clean data_frame for graduation-rates by removing records which have an unintelligible graduation rate (i.e. "PS", < 0, > 100, NA values)
+
+# [2]
+
+# *****************************************************************************************************************#
+```
