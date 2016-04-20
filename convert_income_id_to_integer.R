@@ -1,6 +1,9 @@
 convert_income_id_to_integer <-function(my_factor, desired_int_length, num_offset){
   # DESCRIPTION: Converts the factor variable my_factor into an integer of specified length given by desired_int_length. 
   #              Allows user to specificy that the first num_offset characters of my_factor are to be discarded
+  #
+  #              Note: This function was written to convert the school district ID values from the data set containing median income
+  #                    data and is the reason for the odd name of this function.
   # 
   # EXAMPLE:     convert_income_id_to_integer('123459876',desired_int_length=4,num_offset=5) returns the integer 9876
   #
