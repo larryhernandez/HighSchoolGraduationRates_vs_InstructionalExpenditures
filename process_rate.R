@@ -4,8 +4,13 @@ process_rate<-function(rate_as_factor){
 #                   (1) process_special_rate_codes
 #                   (2) median_of_numerical_range_represented_as_char
 #  
-#             Assumes that rate_as_factor can be classified as a variable of class 'numeric' or 'character'
-# EXAMPLE:     process_rate(rate_as_factor = '') returns the integer 9876
+#             Assumes that rate_as_factor can be classified as a variable of class 'numeric' or 'character' which appears to be a 
+#             legitimate graduation rate or specialized code for a graduation rate
+#
+# EXAMPLES:     process_rate(rate_as_factor = '50-60') returns 55
+#               process_rate(rate_as_factor = 'LE20') returns 10
+#               process_rate(rate_as_factor = '6.2') returns 6.2
+#               process_rate(rate_as_factor = 'xyZ') returns -1
 #
 # INPUTS:
 #   rate_as_factor    factor variable that needs to be converted to an integer
