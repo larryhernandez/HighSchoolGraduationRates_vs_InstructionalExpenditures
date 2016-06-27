@@ -1,0 +1,489 @@
+---
+title: Do Lower Instructional Expenditures Lead to Higher 4-Year Public High School Graduation Rates in the U.S.?
+author: "Larry Hernandez"
+date: "May 5, 2016"
+output: word_document
+---
+## Introduction
+  With the national public high school 4-year adjusted cohort graduation rate (ACGR) in the United States residing at 81.4% $^{\dag}$, with the lowest rate of 71.7% held by Georgia and the highest rate of 89.7% claimed by Iowa, it is no surprise that many people would like to direct more money into the public education system. After all, it is commonly thought that more money in schools will translate into increased student achievement, and in particular more graduates. Educational expenses that are often targeted by this frame of thought include instructional supplies, instructional services, and teacher compensation, collectively known as instructional expenditures.  
+    
+  But does increased spending on instruction lead to higher 4-year public high school graduation rates? Some would argue yes. Instructional supplies and services are extremely important to student learning since they are part of the foundation of classroom education. More money for supplies and services would ensure that all students are set up for a successful learning experience. And perhaps paying teachers higher wages-or simply giving them annual bonuses for yielding higher standardized test scores-will increase their effectiveness as educators. A higher paid teacher could focus more on her curriculum instead of working a second, part-time job to make ends meet. While this theory seems plausible, the contrary theory seems reasonable too and is the hypothesis of this paper. Lower instructional expenditures per student may actually lead to higher 4-year ACGRs in U.S. public high school districts, because lower instructional expenditures would require schools to be innovative with their curricula in ways that promote student achievement and also require schools to employ the types of teachers who are willing to get paid lower salaries.
+
+## Methods
+  In this investigation, we study the relationship between 4-year ACGR and instructional expenditures per student in public high school districts across forty eight of the fifty states, including the District of COlumbia. We take into account demographic and financial variables related to education systems, including racial composition of a school, percentage of students identified as English language learners, and percentage of students receiving free or reduced lunch. Using a multiple linear regression analysis, we examine the hypothesis that low instructional expenditures per student lead to higher 4-year ACGR in US public high schools.  
+  
+### Data Sources
+  Data used in this study was obtained from the National Center for Education Statistics (NCES) and the U.S. Department of Education EDFacts Initiative (EDFacts) websites. All data reflect the 2012-2013 school year for school districts residing in the United States, including the District of Columbia, and are indexed with a unique Local Education Agency Identification (LEAID) number. URLs are provided in the Appendix at the end of this document.
+
+  Since it is common for some students to change school districts throughout their high school experience, the 4-year adjusted cohort graduation rate (ACGR) is the version of high school graduation rate that is studied in this investigation. The ACGR accounts for student mobility, including transfers, emigration, and death during the 4-year academic period. ACGR is considered to be an accurate estimate of 4-year graduation rates. These data are found on the EdFacts website.
+    
+  The primary predictor of interest in this investigation is Instructional Expenditure per Student. Instructional expenditures include costs for instructional supplies, instructional services, and teacher salaries and benefits. The data for this variable is provided by the Elementary / Secondary Information System (ElSi) tableGenerator tool on the National Center for Education Statistics website.
+    
+  Other variables that are included in this investigation are: Urban Centric Locale; student-teacher ratio; number of students classified as English Language Learners (ELL); numbers of Hispanic, Asian / Pacific Islander, White, Black, and First Nations students; total student enrollment; and number of students eligible for free or reduced lunch, by school district. Urban Centric Locale indicates if a school district resides in a city (small, medium, or large), a suburb, a town, or rural area. Eligibility for reduced or free lunch is utilized as a proxy for poverty. These data are found on the NCES website using the Elsi tableGenerator.
+        
+  It should be noted that the Idaho state education agency was not required to calculate or report the new four-year ACGR for academic year 2012-13. Therefore, data corresponding to districts residing in Idaho were not available and, consequently, those districts were excluded from this study.
+  
+### Data Cleaning
+  The aforementioned data were cleaned and transformed for analysis. Some ACGR data were provided in the form of a range, such as 60-69, or were anonymized as a code, such as "GT50", representing a value "greater than 50 percent". Records with ACGR values reported as a range greater than 5 (percent) were excluded in order to minimize the impact of these data on the final model since most ACGR values were greater than 60. The counts for each racial group were transformed to percentages of the student body, as were the counts for English Language Learners, and the counts for students in the reduced lunch program.
+        
+  Only districts containing all of the desired predictors were included in the final analysis. Since the Alabama education agency did not report statistics on the number of English Language Learners for any of its school districts, all school districts residing in Alabama were incidentally omitted from this study.
+    
+### Statistical Techniques
+  A multiple linear regression (MLR) model was fit to the ACGR data while controlling for percentage of students eligible for free or reduced lunch, student-teacher ratio, percentage of English Language Learners, percentage of students from non-White, non-Asian racial backgrounds, and urban centric locale:
+    
+  The MLR model was chosen since these types of models generally perform reasonably well at capturing relationships between variables of interest, even those that are nonlinear, and are well-suited for interpretation, the primary goal of this work. The specific predictors chosen here were readily available and some have suspected to be related to high school graduation rates. The model was fit on a random 20% sample of the data set, and using this fit, the mean squared prediction error was calculated on the remaining 80% of the data. To test the model against perturbation, it was fit on california data and used to predict wisconsin ACGR.
+    
+    A nonparametric bootstrap with 1,000 iterations was performed to estimate the coefficient for Instructional Expenditures per Student and the intercept term. This same bootstrap was used to obtain estimates for the standard deviations of these coefficients. The nonparametric version was utilized since the true underlying relationship between the predictors and outcome are likely not linear. 
+    
+## Results
+  The summary of the estimated coefficients for this MLR model (Table 1) indicates p-values that are nearly zero for Instructional Expenditures and most of the other predictors, suggesting statistically significant relationships between these predictors and the outcome. The Adjusted R-squared value of 0.38 indicates that 38% of the variation is explained by the  model. The estimated coefficient for the primary predictor, Instructional Expenditures, is -0.001 with a standard error of 1.18e-4, and a highly significant p-value smaller than 2e-16. The intercept, which describes the average graduation rate for White or Asian students from large cities is 115%, with a variance of 2.6%. This value for the intercept is clearly bogus and indicates problems with this model.
+    
+  The nonparametric bootstrap yielded a value of -0.001075 for Instructional Expenditures, in agreement with the value reported in Table 1, and a standard deviation of 0.00013, which is smaller than that reported in Table 1. The p-value for this estimated coefficient is too small to measure, which is consistent with the value reported in Table 1. The bootstrap estimates for the intercept term and standard deviation are , respectively. The associated p-value is again too small to measure and is consistent with the nearly-zero value reported in Table 1.
+    
+  A plot of the Residuals vs Fitted ACGR Values (Figure 1) reveals that the model suffers from non-constant variance since it contains a leftward-facing fan-shaped pattern. The Q-Q plot (Figure 2) reveals violation of normality of the errors, since the data deviate from the straight line, particularly on the ends. The spatial plot of the predicted values for ACGR (Figure 3) reveals problems with the model. Some of the predicted values are negative and some exceed 100%. These are unrealistic values for graduation rates.
+  The mean squared prediction error when the model is run on the validation set is 63%, which is substantially large. The mean squared prediction error was 29% for Wisconsin data when the model was fit using only the California data. This is a large error but not surprising considering the model has major problems.
+  
+  The spatial plot of the residuals reveals that neighboring districts exhibit similar residual values, indicating a violation of the assumption that the covariance of the error is zero. This is not surprising since neighboring districts would share similar student demographics.
+
+## Conclusion
+  Unfortunately, the final model chosen for this data set suffered from high variance, as indicated by the funnel shape in FIgure ??, and leads to mean squared error of 63%. Despite efforts to transform several of the variables, including logarithmic transformations, square roots, reciprocal of the outcome, and several combinations of these transformations on the outcome and predictors of interest, the least unsatisfactory model obtaind was the one provided here. Additionally, utilizing generalized additive models did not appear helpful. Additionally, technological issues related to mapping the data (with Shapefiles) made diagnosis challenging. Thus, with the modeling process still in need of refinement, no claim can be made at this time about the relationship between Instructional Expenditures per Student and ACGR. The hypothesis remains to be tested.
+    
+  There were several limitations of this study which affect the results and analysis. A first limitation is the lack of potentially useful, confounding variables that could impact ACGR. Some of these variables are behavior and crime statistics in schools, attendance rates, availability of college-readiness programs such as Gear-Up, access to programs that help struggling students, participation in extracurricular activities, preparedness for high school upon completion of middle school or other measure of academic achievement at the start of 9th grade, educational attainment of parental guardian(s), to name a few. Many of these variables are available in the School Survey on Crime and Safety (SSOCS) for various years or the High School Longitudinal Study of 2009, but access to those data are excluded to qualified education researchers. A second limitation is the quality of the data used for the analysis. Data that is more complete or specific could lead to improved analysis. For example, one-third of the ACGR values were either completely anonymized or reported as a range of values (i.e, 60-69; 50+; 80+; below 50), where the reported ACGR ranges were largest for the smallest schools and visa-versa. Third, since these data were collected as part of a survey, there is randomness associated with reporting that include data entry errors, incorrectly quoted values due to misunderstanding survey questions, non-respondents (i.e. Idaho) or missing values for predictors used in this study (i.e. Alabama). Finally, had a more satisfactory model been found, inferences about individual students could not be made using the results provided by the model, as this would constitute ecological (inference) fallacy. Any correlations found using these aggregated data from school populations cannot be imposed upon any individual student.
+        
+  Given additional variables and time to conduct the corresponding analysis, a better assessment of the relationship between ACGR and Instructional Expenditures per student could potentially be determined.
+
+## Appendix
+The following is a list of the data sources and corresponding URLs for the predictors used in this study.
+
+[1] ACGR School Year 2012-2013 Data:  
+http://www2.ed.gov/about/inits/ed/edfacts/data-files/acgr-lea-sy2012-13.csv
+
+[2] NCES 2013 Data for Income and Poverty:
+http://nces.ed.gov/programs/edge/tables.aspx?ds=acsProfile&y=2013
+
+[3] ElSi tableGenerator data:
+http://nces.ed.gov/ccd/elsi/tableGenerator.aspx?savedTableID=16594
+http://nces.ed.gov/ccd/elsi/tableGenerator.aspx?savedTableID=36934
+
+```{r, echo=FALSE, warning=FALSE}
+rm(list=ls())
+setwd("E:/Math/STAT_333_AppliedRegression/Project/R_code/")
+library(varhandle)
+library(boot)
+library(leaps)
+library(sp)
+library(maptools)
+library(RColorBrewer)
+library(classInt)
+library(gam)
+library(akima)
+library(splines)
+library(foreach)
+library(mgcv)
+source("convert_income_id_to_integer.R")
+source("is.letter.R")
+source("process_rate.R")
+source("process_special_rate_codes.R")
+source("median_of_numerical_range_represented_as_char.R")
+source("convert_numeric_factor_to_integer.R")
+source("convert_numeric_factor_to_numeric.R")
+source("number_of_na_values.R")
+source("merge_data_with_shape.R")
+source("map_shape_file.R")
+source("get_indices_for_training_set.R")
+source("get_test_set.R")
+# **********************************************************************************************#
+# LOAD SCHOOL DISTRICT DATA FROM DISK
+
+# Adjusted Cohort Graduation Rates (ACGR)
+fn_grad_rates = "E:/Math/STAT_333_AppliedRegression/Project/Data/graduation_rates/EdFacts/2012_2013/AGCR_2012_2013.csv"
+grad_rates <-read.csv(fn_grad_rates, header = TRUE, sep = ",", dec = ".", fill = TRUE)
+
+# Income and poverty data
+fn_income = "E:/Math/STAT_333_AppliedRegression/Project/Data/income/EDGE_2013/CDP03.2_105_USSchoolDistrictAll_217191048912.csv"
+income_data = read.csv(fn_income, header = TRUE, sep = "|", dec = ".", fill = TRUE)
+
+fn_demographics_and_expenses = "E:/Math/STAT_333_AppliedRegression/Project/Data/ElSi_Data/2012_2013_DistrictTable/demographics_expenses/ELSI_csv_export_6359497038941595917333.csv"
+demographics <-read.csv(fn_demographics_and_expenses, header = TRUE, sep = ",", dec = ".", skip = 6, fill = TRUE, nrows = 18567)
+
+# ********** PROCESSING UNIQUE NUMERIC IDs FOR COMBINING DATA INTO A SINGLE DATA FRAME ************************ #
+ids_income = income_data$GeoId
+standard_id_length = 7
+ids_income_ints = unlist(lapply(ids_income, convert_income_id_to_integer, desired_int_length = standard_id_length, num_offset = 7))
+
+# INSERT COLUMN FOR SCHOOL DISTRICT IDs IN NUMERIC FORM FOR INCOME DATA_FRAME
+income_data$district_id = ids_income_ints
+
+# CREATE NEW DATAFRAME BY MATCHING RECORDS FROM GRAD_RATES DATA WITH THOSE OF INCOME DATA FRAME USING  district_id AS MATCHING IDENTIFIER
+matching_indices = match(income_data$district_id, grad_rates$leaid12)
+matching_indices = na.omit(matching_indices)
+ed_data = grad_rates[matching_indices,1:6]
+
+# INSERT COLUMN 'median_household_income' IN NUMERIC FORM FOR INCOME DATA_FRAME
+rates_numeric = unlist(lapply(ed_data$ALL_RATE_1213, process_rate))
+NA_indices_ed_data = which(is.na(rates_numeric))
+indices_with_negativeone_gradrate = which(rates_numeric == -1)
+ed_data$acgr = rates_numeric
+
+# Remove any rows that had acgr assigned to -1 (data elements that do not belong to both sets)
+rows_to_remove = which(ed_data$acgr == -1)
+if (length(rows_to_remove) != 0){
+  print('Removing records with acgr = -1')
+  ed_data = ed_data[-rows_to_remove,]
+}
+
+# INSERT INCOME VALUES FROM INCOME_DATAFRAME INTO THE COMPOSITE DATAFRAME ed_data
+matching_indices = match(ed_data$leaid12, income_data$district_id)
+ed_data$income = income_data$CDP03_16[matching_indices]   #CDP03_16 = median household income in dollars
+
+# PROCESS DEMOGRAPHIC DATA
+ids_from_demo = demographics$Agency.ID...NCES.Assigned..District..Latest.available.year
+demographics$district_id = unlist(lapply(ids_from_demo,convert_income_id_to_integer, desired_int_length = 7, num_offset = 1))
+
+# Process (i.e. cleanse) and then insert columns from demographic data
+matching_indices = match(ed_data$leaid12, demographics$district_id)
+if (number_of_na_values(matching_indices) > 0){
+  matching_indices = na.omit(matching_indices)  
+}
+
+ed_data$FirstNationsCount = unlist(lapply(demographics$American.Indian.Alaska.Native.Students..District..2012.13[matching_indices], convert_numeric_factor_to_integer))
+
+ed_data$AsianPacificCount = unlist(lapply(demographics$Asian.or.Asian.Pacific.Islander.Students..District..2012.13[matching_indices], convert_numeric_factor_to_integer)) + unlist(lapply(demographics$Hawaiian.Nat..Pacific.Isl..Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$HispanicCount = unlist(lapply(demographics$Hispanic.Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$BlackCount = unlist(lapply(demographics$Black.Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$WhiteCount = unlist(lapply(demographics$White.Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$MultiRacialCount = unlist(lapply(demographics$Two.or.More.Races.Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$TotalRace = unlist(lapply(demographics$Total.Race.Ethnicity..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$StudentTeacher = unlist(lapply(demographics$Pupil.Teacher.Ratio..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$UrbanLocale = demographics$Urban.centric.Locale..District..2012.13[matching_indices]
+#ed_data$MetroMicroAreaCode = demographics$Metro.Micro.Area.Code..District..2012.13
+
+ed_data$MalesCount = unlist(lapply(demographics$Male.Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
+ed_data$FemalesCount = unlist(lapply(demographics$Female.Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$ELL_Count = unlist(lapply(demographics$Limited.English.Proficient..LEP....English.Language.Learners..ELL...District..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$Reduced_lunch = unlist(lapply(demographics$Total.Free.and.Reduced.Lunch.Students..Public.School..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$TotalRevenuePerPupil = unlist(lapply(demographics$Total.Revenue..TOTALREV..per.Pupil..V33...District.Finance..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$FederalRevenuePerPupil = unlist(lapply(demographics$Total.Revenue...Federal.Sources..TFEDREV..per.Pupil..V33...District.Finance..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$InstrExpend = unlist(lapply(demographics$Total.Current.Expenditures...Instruction..TCURINST..per.Pupil..V33...District.Finance..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$pctFedRevToTotal = 
+  unlist(lapply(demographics$Total.Revenue...Federal.Sources..TFEDREV..as.Percentage.of.Total.Revenue..TOTALREV...District.Finance..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$pctInstrExpOfDaily = unlist(lapply(demographics$Total.Current.Expenditures...Instruction..TCURINST..as.Percentage.of.Curr.El.SEC..TCURELSC...District.Finance..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$SSvcOfDayCost = unlist(lapply(demographics$Total.Current.Expenditures...Support.Services..TCURSSVC..as.Percentage.of.Curr.El.Sec..TCURELSC...District.Finance..2012.13[matching_indices],convert_numeric_factor_to_integer))
+
+ed_data$Latitude = unlist(lapply(demographics$Latitude..District..2012.13[matching_indices],convert_numeric_factor_to_numeric))
+ed_data$Longitude = unlist(lapply(demographics$Longitude..District..2012.13[matching_indices],convert_numeric_factor_to_numeric))
+
+# Transformed / Calculated variables
+ed_data$Lunch = round( (ed_data$Reduced_lunch / ed_data$TotalRace)*100)
+ed_data$Male = round( (ed_data$MalesCount / ed_data$TotalRace)*100)
+ed_data$White = round( ( ed_data$WhiteCount / ed_data$TotalRace)*100)
+ed_data$Black = round( ( ed_data$BlackCount / ed_data$TotalRace)*100)
+ed_data$FirstNations = round( ( ed_data$FirstNationsCount / ed_data$TotalRace)*100)
+ed_data$Hispanic = round( ( ed_data$HispanicCount / ed_data$TotalRace)*100)
+ed_data$Asian = round( ( ed_data$AsianPacificCount / ed_data$TotalRace)*100)
+ed_data$MultiRacial = round( ( ed_data$MultiRacialCount / ed_data$TotalRace)*100)
+ed_data$nonWhite = round( ( (ed_data$TotalRace - ed_data$WhiteCount) / ed_data$TotalRace)*100)
+ed_data$under_minority = round( ( (ed_data$TotalRace - ed_data$WhiteCount - ed_data$AsianPacificCount) / ed_data$TotalRace)*100) 
+ed_data$pctELL = round( ed_data$ELL_Count / ed_data$TotalRace * 100)
+
+# From ed_data, remove records that have zero or NA values in the following columns {TotalRace}
+zero_students = which(ed_data$TotalRace ==0)
+ed_data = ed_data[-zero_students,]
+
+# Extract the predictors of interest
+predictor_names = c("leaid12","FIPST","acgr","income","StudentTeacher","InstrExpend","pctFedRevToTotal","pctInstrExpOfDaily","SSvcOfDayCost", "UrbanLocale","Lunch","pctELL","under_minority","Latitude","Longitude")
+
+# Keep only complete cases
+cleaned_ed_data = na.omit(ed_data[,predictor_names])
+#cleaned_ed_data$acgr_max1 = cleaned_ed_data$acgr / 100
+#cleaned_ed_data$acgr_arcsin = asin(sqrt(cleaned_ed_data$acgr_max1))
+
+# Divide the cleaned data set into a training set and a validation set
+set.seed(1)
+indices_for_training = get_indices_for_training_set(cleaned_ed_data, 0.20)
+training_data = cleaned_ed_data[indices_for_training,]
+validation_data = get_test_set(cleaned_ed_data,indices_for_training)
+```
+
+``` {r, warning=FALSE}
+# Create a model
+ed_model = lm(acgr~ InstrExpend + Lunch + StudentTeacher + under_minority + pctELL + UrbanLocale, data = training_data)
+summary(ed_model)
+#x11(); par(mfrow=c(2,2));
+#plot(lm.model)
+```
+
+
+``` {r, echo = FALSE, warning=FALSE}
+# Use model to predict on validation set and calculate prediction error
+acgr_predicts = predict(ed_model, validation_data)
+validation_mse = mean( (acgr_predicts - validation_data$acgr)^2, na.rm = TRUE)
+
+# Non-Parametric Bootstrap
+n <- nrow(training_data)      ## number of observations
+B <- 1000              ## number of bootstrap samples
+set.seed(1)
+nonpara.bootstrap.ests <- numeric(B)
+nonpara.bootstrap.b0 <- numeric(B)
+
+for(i in 1:B)
+{
+  bootstrap.inds <- sample(n, n, TRUE)
+  mod.boot <- lm(acgr[bootstrap.inds] ~ InstrExpend[bootstrap.inds] + Lunch[bootstrap.inds] + StudentTeacher[bootstrap.inds]                  + under_minority[bootstrap.inds] + pctELL[bootstrap.inds] + UrbanLocale[bootstrap.inds], data=training_data)
+  betas.star <- coef(mod.boot)
+  nonpara.bootstrap.ests[i] <- betas.star[2]
+  nonpara.bootstrap.b0[i] <- betas.star[1]
+}
+
+# x11()
+# nonpara_hist = hist(nonpara.bootstrap.ests, main = expression(paste("Nonparametric Bootstrap Dist. of Instructional Expenditures*")), xlab = expression(paste('Instructional Expenditures',', ',hat(beta)[1],'*')))
+# center = mean(nonpara.bootstrap.ests)
+# height_at_center = 300
+# abline(v = center, col = 2, lwd=2)
+# segments(center, height_at_center/2, center + sd(nonpara.bootstrap.ests), height_at_center/2, col = "darkgreen", lwd=2)
+# legend("topright", c(expression(paste(hat(beta)[1],'*')), expression(paste("SE(", hat(beta)[1], "*)"))), bty="n", lwd=2, col=c("red", "darkgreen", "white"))
+
+# if (center > 0){
+#   p_value_nonpara_boot = sum(nonpara.bootstrap.ests < 0) / B
+# }else{
+#   p_value_nonpara_boot = sum(nonpara.bootstrap.ests > 0) / B
+# }
+# 
+# sd_b1 = sd(nonpara.bootstrap.ests)
+# p_value_b1 = pt(mean(nonpara.bootstrap.ests) / sd_b1, B-2)*2
+
+
+# x11()
+# nonpara_hist = hist(nonpara.bootstrap.b0, main = expression(paste("Nonparametric Bootstrap Dist. of Intercept*")), xlab = expression(paste('Intercept',', ',hat(beta)[0],'*')))
+# center = mean(nonpara.bootstrap.b0)
+# height_at_center = 300
+# abline(v = center, col = 2, lwd=2)
+# segments(center, height_at_center/2, center + sd(nonpara.bootstrap.b0), height_at_center/2, col = "darkgreen", lwd=2)
+# legend("topright", c(expression(paste(hat(beta)[0],'*')), expression(paste("SE(", hat(beta)[0], "*)"))), bty="n", lwd=2, col=c("red", "darkgreen", "white"))
+
+# if (center > 0){
+#   p_value_nonpara_boot = sum(nonpara.bootstrap.b0 < 0) / B
+# }else{
+#   p_value_nonpara_boot = sum(nonpara.bootstrap.b0 > 0) / B
+# }
+
+#sd_b0 = sd(nonpara.bootstrap.b0)
+#p_value_b0 = pt(mean(nonpara.bootstrap.b0) / sd_b0, B-2)*2
+
+```
+
+
+
+```{r, echo=FALSE, warning=FALSE}
+# lm.ed_model1 = lm(acgr_arcsin~InstrExpend, data = training_data)
+# summary(lm.ed_model1)
+# x11();
+# plot(training_data$InstrExpend,training_data$acgr_arcsin)
+# points(training_data$InstrExpend,predict(lm.ed_model1),col='red')
+
+# This might be the model to pursue!
+# lm.ed_model_logx = lm(1/acgr~log(InstrExpend), data = training_data)
+# summary(lm.ed_model_logx)
+# x11();
+# plot(training_data$InstrExpend,1/training_data$acgr)
+# points(training_data$InstrExpend,predict(lm.ed_model_logx),col='red')
+# x11();
+# par(mfrow=c(2,2)); 
+# plot(lm.ed_model_logx)
+
+
+# lm.ed_model2 = lm(acgr~InstrExpend + income, data = training_data)
+# summary(lm.ed_model2)
+# anova(lm.ed_model1, lm.ed_model2)
+# 
+# lm.ed_model3 = lm(acgr~InstrExpend + income + StudentTeacher, data = training_data)
+# summary(lm.ed_model3)
+# anova(lm.ed_model2, lm.ed_model3)
+# 
+# lm.ed_model4 = lm(acgr~InstrExpend + income + StudentTeacher + under_minority, data = training_data)
+# summary(lm.ed_model4)
+# anova(lm.ed_model3, lm.ed_model4)
+# 
+# lm.ed_model5 = lm(acgr~InstrExpend + income + StudentTeacher + under_minority + pctELL, data = training_data)
+# summary(lm.ed_model5)
+# anova(lm.ed_model4, lm.ed_model5)
+# x11()
+# par(mfrow=c(2,2))
+# plot(lm.ed_model5)
+# 
+# 
+# lm.ed_model_transform = lm(acgr ~ log(InstrExpend) + log(income) + StudentTeacher + pctELL + under_minority + lo(Latitude, Longitude, span = .2), data = training_data)
+# summary(lm.ed_model_transform)
+# x11()
+# par(mfrow=c(2,2))
+# plot(lm.ed_model_transform)
+# 
+# 
+# lm.ed_model_transform = lm(log(1/acgr) ~ log(InstrExpend) + log(income) + StudentTeacher + pctELL + lo(Latitude, Longitude, span = .2), data = training_data)
+# summary(lm.ed_model_transform)
+# x11()
+# par(mfrow=c(2,2))
+# plot(lm.ed_model_transform)
+# 
+# 
+# lm.ed_model_transform2 = lm(log(acgr) ~ log(InstrExpend) + log(income) + StudentTeacher + pctELL +  lo(Latitude, Longitude, span = .2), data = training_data)
+# summary(lm.ed_model_transform2)
+# x11()
+# par(mfrow=c(2,2))
+# plot(lm.ed_model_transform2)
+# 
+# ##############################################
+# lm.ed_model6 = lm(acgr~InstrExpend + log(income) + StudentTeacher + White + pctELL + lo(Latitude, Longitude, span = .2), data = training_data)
+# summary(lm.ed_model6)
+# anova(lm.ed_model5, lm.ed_model6)
+# x11()
+# par(mfrow=c(2,2))
+# plot(lm.ed_model6)
+# 
+# 
+# g1=gam(acgr~lo(InstrExpend) + lo(income) + lo(StudentTeacher) + lo(White) + lo(pctELL) + lo(Latitude, Longitude, span = .2), data= training_data)
+# summary(g1)
+# anova(lm.ed_model5,g1)
+# x11()
+# par(mfrow=c(2,2))
+# plot(g1)
+# 
+# 
+# lm.ed_model7 = lm(acgr~InstrExpend + income + StudentTeacher + White + pctELL + UrbanLocale, data = training_data)
+# summary(lm.ed_model7)
+# anova(lm.ed_model5, lm.ed_model7)
+
+### GAM
+# gam.model6 = gam(acgr ~ lo(InstrExpend) + lo(income) + StudentTeacher + lo(under_minority) + pctELL + UrbanLocale, data = training_data)
+# summary(gam.model6)
+# anova(gam.model5,gam.model6)
+
+# predictions = predict.gam(gam.model6,validation_data)
+# mspe_gam = mean( (predictions - validation_data$acgr)^2, na.rm = TRUE)
+```
+
+
+```{r, echo=FALSE, warning=FALSE}
+# De-aggregate data into separate groups: CA, WI
+# indices_ca       = which(cleaned_ed_data$FIPST == 6)
+# indices_wi       = which(cleaned_ed_data$FIPST == 55)
+# ca_data = cleaned_ed_data[indices_ca,]
+# wi_data = cleaned_ed_data[indices_wi,]
+ 
+# Fit the model with 'ca_data'
+# n = nrow(ca_data)
+# lm.model_ca = lm(acgr ~ InstrExpend + Lunch + StudentTeacher + under_minority + pctELL + UrbanLocale, data=ca_data)
+ 
+# Make predictions using selected model and calculate training MSE
+# predictions_wi <-predict(lm.model_ca,wi_data)
+# mspe_wi = mean( (predictions_wi - wi_data$acgr)^2, na.rm = TRUE)
+
+# Plot the predictions and the actual outcomes for WI
+#Load Unified School District Polygons: Wisconsin
+# shape_file_unified_wi <-"C:/Users/Larry/Desktop/Shapefiles/from_government_site/wisconsin/tl_2013_55_unsd_extracted/tl_2013_55_unsd.shp"
+# sh_unified_wi <- readShapePoly(shape_file_unified_wi)
+
+# # Load Secondary School District Polygons: Wisconsin
+# shape_file_secondary_wi <-"C:/Users/Larry/Desktop/Shapefiles/from_government_site/wisconsin/tl_2013_55_scsd_extracted/tl_2013_55_scsd.shp"
+# sh_secondary_wi <- readShapePoly(shape_file_secondary_wi)
+
+##### Subset the acgr data
+# wi_indices = which(cleaned_ed_data$FIPST == 55)
+# wi_data_to_plot = subset(cleaned_ed_data[wi_indices,],select=c("leaid12","acgr"))
+#map_ssd_unsd_acgr(sh_secondary_wi,sh_unified_wi,wi_data_to_plot,lm.model_ca, title_content="WI")
+
+```
+
+
+
+```{r,echo=FALSE, warning=FALSE}
+
+##### Diagnostic plots
+#x11()
+#plot(final_model)
+#dev.off()
+
+##### Spatial Maps
+#Load Shapefiles: Secondary School Districts & Unified School Districts
+# shapefile_secondary <-"E:/Math/STAT_333_AppliedRegression/Project/Shapefiles/unified_and_secondary_school_districts/secondary_districts_2013/sdsecondary2013_TIGER_nationwide.shp"
+# shape_secondary <- readShapePoly(shapefile_secondary)
+# 
+# # 
+# shapefile_unified <-"E:/Math/STAT_333_AppliedRegression/Project/Shapefiles/unified_and_secondary_school_districts/unified_districts_2013/sdunified2013_TIGER_nationwide.shp"
+# shape_unified <- readShapePoly(shapefile_unified)
+
+# Load Unified School District Polygons: California
+# shape_file_unified_ca <-"C:/Users/Larry/Desktop/Shapefiles/from_government_site/california/tl_2013_06_unsd_extracted/tl_2013_06_unsd.shp"
+# sh_unified_ca <- readShapePoly(shape_file_unified_ca)
+# 
+# # Load Secondary School District Polygons: California
+# shape_file_secondary_ca <-"C:/Users/Larry/Desktop/Shapefiles/from_government_site/california/tl_2015_06_scsd_extracted/tl_2015_06_scsd.shp"
+# sh_secondary_ca <- readShapePoly(shape_file_secondary_ca)
+
+
+##### Subset the acgr data
+# ed_data_to_plot = subset(cleaned_ed_data,select=c("leaid12","acgr"))
+# sh_secondary_with_acgr <- merge_data_with_shape(shape_secondary,ed_data_to_plot,"GEOID","leaid12")
+# sh_unified_with_acgr   <- merge_data_with_shape(shape_unified, ed_data_to_plot,"GEOID","leaid12")
+
+# Map outcome of interest (i.e. acgr)
+# x11()
+# acgr_title = "Measured Adj. Cohort Grad. Rates"
+# map_shape_file(sh_secondary_with_acgr, cleaned_ed_data$acgr, cleaned_ed_data$leaid12, acgr_title, add_plot = FALSE)
+# map_shape_file(sh_unified_with_acgr,cleaned_ed_data$acgr, cleaned_ed_data$leaid12, acgr_title, add_plot = TRUE)
+
+
+# Map predicted values of acgr
+# x11()
+# predicted_acgr = predict.lm(ed_model,cleaned_ed_data)
+# pred_title = "Predicted Adj. Cohort Grad. Rates"
+# map_shape_file(sh_secondary_with_acgr, predicted_acgr, cleaned_ed_data$leaid12, pred_title, add_plot = FALSE)
+# map_shape_file(sh_unified_with_acgr, predicted_acgr, cleaned_ed_data$leaid12, pred_title, add_plot = TRUE)
+
+# 
+# # Map residuals
+# x11()
+# title = "Residuals"
+# map_shape_file(sh_secondary_with_acgr, ed_model$residuals, cleaned_ed_data$leaid12, title, add_plot = FALSE)
+# map_shape_file(sh_unified_with_acgr, ed_model$residuals, cleaned_ed_data$leaid12, title, add_plot = TRUE)
+
+# Map a few variables of interest: income, InstrExpend, StudentTeacher, Lunch, pctELL
+#x11()
+#title = "Median Household Income"
+#map_shape_file(sh_secondary_with_acgr, cleaned_ed_data$income, cleaned_ed_data$leaid12, title, add_plot = FALSE)
+#map_shape_file(sh_unified_with_acgr, cleaned_ed_data$income, cleaned_ed_data$leaid12, title, add_plot = TRUE)
+#dev.off()
+
+#x11()
+#title = "Instructional Expenditures Per Student"
+#map_shape_file(sh_secondary_with_acgr, cleaned_ed_data$InstrExpend, cleaned_ed_data$leaid12, title, add_plot = FALSE)
+#map_shape_file(sh_unified_with_acgr, cleaned_ed_data$InstrExpend, cleaned_ed_data$leaid12, title, add_plot = TRUE)
+#dev.off()
+
+#x11()
+#title = "Percentage of Students Receiving Free or Reduced Lunch"
+#map_shape_file(sh_secondary_with_acgr,cleaned_ed_data$Lunch, cleaned_ed_data$leaid12, title, add_plot = FALSE)
+#map_shape_file(sh_unified_with_acgr, cleaned_ed_data$Lunch, cleaned_ed_data$leaid12, title, #add_plot = TRUE)
+#dev.off()
+
+#x11()
+#title = "Percentage of Students who are English Language Learners"
+#map_shape_file(sh_secondary_with_acgr,cleaned_ed_data$pctELL, cleaned_ed_data$leaid12, title, add_plot = #FALSE)
+#map_shape_file(sh_unified_with_acgr, cleaned_ed_data$pctELL, cleaned_ed_data$leaid12, title, add_plot = #TRUE)
+#dev.off()
+```
