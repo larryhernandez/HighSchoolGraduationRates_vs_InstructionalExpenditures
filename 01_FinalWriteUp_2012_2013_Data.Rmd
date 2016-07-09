@@ -66,162 +66,38 @@ http://nces.ed.gov/ccd/elsi/tableGenerator.aspx?savedTableID=16594
 http://nces.ed.gov/ccd/elsi/tableGenerator.aspx?savedTableID=36934
 
 ```{r, echo=FALSE, warning=FALSE}
+
+# Clear workspace
 rm(list=ls())
+
+# Set working directory
 setwd("E:/Math/STAT_333_AppliedRegression/Project/R_code/")
-library(varhandle)
-library(boot)
-library(leaps)
-library(sp)
-library(maptools)
-library(RColorBrewer)
-library(classInt)
-library(gam)
-library(akima)
-library(splines)
-library(foreach)
-library(mgcv)
-source("convert_income_id_to_integer.R")
-source("is.letter.R")
-source("process_rate.R")
-source("process_special_rate_codes.R")
-source("median_of_numerical_range_represented_as_char.R")
-source("convert_numeric_factor_to_integer.R")
-source("convert_numeric_factor_to_numeric.R")
-source("number_of_na_values.R")
-source("merge_data_with_shape.R")
-source("map_shape_file.R")
-source("get_indices_for_training_set.R")
-source("get_test_set.R")
-# **********************************************************************************************#
-# LOAD SCHOOL DISTRICT DATA FROM DISK
 
-# Adjusted Cohort Graduation Rates (ACGR)
-fn_grad_rates = "E:/Math/STAT_333_AppliedRegression/Project/Data/graduation_rates/EdFacts/2012_2013/AGCR_2012_2013.csv"
-grad_rates <-read.csv(fn_grad_rates, header = TRUE, sep = ",", dec = ".", fill = TRUE)
+# Load libraries and functions with R script
+source("E:/Math/STAT_333_AppliedRegression/Project/R_code/load_libraries_functions.R")
 
-# Income and poverty data
-fn_income = "E:/Math/STAT_333_AppliedRegression/Project/Data/income/EDGE_2013/CDP03.2_105_USSchoolDistrictAll_217191048912.csv"
-income_data = read.csv(fn_income, header = TRUE, sep = "|", dec = ".", fill = TRUE)
+# Load school district data from disk with R script
+source("load_project_data.R")
 
-fn_demographics_and_expenses = "E:/Math/STAT_333_AppliedRegression/Project/Data/ElSi_Data/2012_2013_DistrictTable/demographics_expenses/ELSI_csv_export_6359497038941595917333.csv"
-demographics <-read.csv(fn_demographics_and_expenses, header = TRUE, sep = ",", dec = ".", skip = 6, fill = TRUE, nrows = 18567)
+# Aggregate and clean the data
+source("aggregate_and_clean_data.R")
 
-# ********** PROCESSING UNIQUE NUMERIC IDs FOR COMBINING DATA INTO A SINGLE DATA FRAME ************************ #
-ids_income = income_data$GeoId
-standard_id_length = 7
-ids_income_ints = unlist(lapply(ids_income, convert_income_id_to_integer, desired_int_length = standard_id_length, num_offset = 7))
+# Define the predictors of interest
+predictors = c("leaid12","FIPST","acgr","income","StudentTeacher","InstrExpend","pctFedRevToTotal","pctInstrExpOfDaily","SSvcOfDayCost", "UrbanLocale","Lunch","pctELL","under_minority","Latitude","Longitude")
 
-# INSERT COLUMN FOR SCHOOL DISTRICT IDs IN NUMERIC FORM FOR INCOME DATA_FRAME
-income_data$district_id = ids_income_ints
+# Extract predictors of interest, keeping only the complete cases
+cleaned_ed_data = na.omit(ed_data[,predictors])
 
-# CREATE NEW DATAFRAME BY MATCHING RECORDS FROM GRAD_RATES DATA WITH THOSE OF INCOME DATA FRAME USING  district_id AS MATCHING IDENTIFIER
-matching_indices = match(income_data$district_id, grad_rates$leaid12)
-matching_indices = na.omit(matching_indices)
-ed_data = grad_rates[matching_indices,1:6]
-
-# INSERT COLUMN 'median_household_income' IN NUMERIC FORM FOR INCOME DATA_FRAME
-rates_numeric = unlist(lapply(ed_data$ALL_RATE_1213, process_rate))
-NA_indices_ed_data = which(is.na(rates_numeric))
-indices_with_negativeone_gradrate = which(rates_numeric == -1)
-ed_data$acgr = rates_numeric
-
-# Remove any rows that had acgr assigned to -1 (data elements that do not belong to both sets)
-rows_to_remove = which(ed_data$acgr == -1)
-if (length(rows_to_remove) != 0){
-  print('Removing records with acgr = -1')
-  ed_data = ed_data[-rows_to_remove,]
-}
-
-# INSERT INCOME VALUES FROM INCOME_DATAFRAME INTO THE COMPOSITE DATAFRAME ed_data
-matching_indices = match(ed_data$leaid12, income_data$district_id)
-ed_data$income = income_data$CDP03_16[matching_indices]   #CDP03_16 = median household income in dollars
-
-# PROCESS DEMOGRAPHIC DATA
-ids_from_demo = demographics$Agency.ID...NCES.Assigned..District..Latest.available.year
-demographics$district_id = unlist(lapply(ids_from_demo,convert_income_id_to_integer, desired_int_length = 7, num_offset = 1))
-
-# Process (i.e. cleanse) and then insert columns from demographic data
-matching_indices = match(ed_data$leaid12, demographics$district_id)
-if (number_of_na_values(matching_indices) > 0){
-  matching_indices = na.omit(matching_indices)  
-}
-
-ed_data$FirstNationsCount = unlist(lapply(demographics$American.Indian.Alaska.Native.Students..District..2012.13[matching_indices], convert_numeric_factor_to_integer))
-
-ed_data$AsianPacificCount = unlist(lapply(demographics$Asian.or.Asian.Pacific.Islander.Students..District..2012.13[matching_indices], convert_numeric_factor_to_integer)) + unlist(lapply(demographics$Hawaiian.Nat..Pacific.Isl..Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$HispanicCount = unlist(lapply(demographics$Hispanic.Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$BlackCount = unlist(lapply(demographics$Black.Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$WhiteCount = unlist(lapply(demographics$White.Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$MultiRacialCount = unlist(lapply(demographics$Two.or.More.Races.Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$TotalRace = unlist(lapply(demographics$Total.Race.Ethnicity..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$StudentTeacher = unlist(lapply(demographics$Pupil.Teacher.Ratio..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$UrbanLocale = demographics$Urban.centric.Locale..District..2012.13[matching_indices]
-#ed_data$MetroMicroAreaCode = demographics$Metro.Micro.Area.Code..District..2012.13
-
-ed_data$MalesCount = unlist(lapply(demographics$Male.Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
-ed_data$FemalesCount = unlist(lapply(demographics$Female.Students..District..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$ELL_Count = unlist(lapply(demographics$Limited.English.Proficient..LEP....English.Language.Learners..ELL...District..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$Reduced_lunch = unlist(lapply(demographics$Total.Free.and.Reduced.Lunch.Students..Public.School..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$TotalRevenuePerPupil = unlist(lapply(demographics$Total.Revenue..TOTALREV..per.Pupil..V33...District.Finance..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$FederalRevenuePerPupil = unlist(lapply(demographics$Total.Revenue...Federal.Sources..TFEDREV..per.Pupil..V33...District.Finance..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$InstrExpend = unlist(lapply(demographics$Total.Current.Expenditures...Instruction..TCURINST..per.Pupil..V33...District.Finance..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$pctFedRevToTotal = 
-  unlist(lapply(demographics$Total.Revenue...Federal.Sources..TFEDREV..as.Percentage.of.Total.Revenue..TOTALREV...District.Finance..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$pctInstrExpOfDaily = unlist(lapply(demographics$Total.Current.Expenditures...Instruction..TCURINST..as.Percentage.of.Curr.El.SEC..TCURELSC...District.Finance..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$SSvcOfDayCost = unlist(lapply(demographics$Total.Current.Expenditures...Support.Services..TCURSSVC..as.Percentage.of.Curr.El.Sec..TCURELSC...District.Finance..2012.13[matching_indices],convert_numeric_factor_to_integer))
-
-ed_data$Latitude = unlist(lapply(demographics$Latitude..District..2012.13[matching_indices],convert_numeric_factor_to_numeric))
-ed_data$Longitude = unlist(lapply(demographics$Longitude..District..2012.13[matching_indices],convert_numeric_factor_to_numeric))
-
-# Transformed / Calculated variables
-ed_data$Lunch = round( (ed_data$Reduced_lunch / ed_data$TotalRace)*100)
-ed_data$Male = round( (ed_data$MalesCount / ed_data$TotalRace)*100)
-ed_data$White = round( ( ed_data$WhiteCount / ed_data$TotalRace)*100)
-ed_data$Black = round( ( ed_data$BlackCount / ed_data$TotalRace)*100)
-ed_data$FirstNations = round( ( ed_data$FirstNationsCount / ed_data$TotalRace)*100)
-ed_data$Hispanic = round( ( ed_data$HispanicCount / ed_data$TotalRace)*100)
-ed_data$Asian = round( ( ed_data$AsianPacificCount / ed_data$TotalRace)*100)
-ed_data$MultiRacial = round( ( ed_data$MultiRacialCount / ed_data$TotalRace)*100)
-ed_data$nonWhite = round( ( (ed_data$TotalRace - ed_data$WhiteCount) / ed_data$TotalRace)*100)
-ed_data$under_minority = round( ( (ed_data$TotalRace - ed_data$WhiteCount - ed_data$AsianPacificCount) / ed_data$TotalRace)*100) 
-ed_data$pctELL = round( ed_data$ELL_Count / ed_data$TotalRace * 100)
-
-# From ed_data, remove records that have zero or NA values in the following columns {TotalRace}
-zero_students = which(ed_data$TotalRace ==0)
-ed_data = ed_data[-zero_students,]
-
-# Extract the predictors of interest
-predictor_names = c("leaid12","FIPST","acgr","income","StudentTeacher","InstrExpend","pctFedRevToTotal","pctInstrExpOfDaily","SSvcOfDayCost", "UrbanLocale","Lunch","pctELL","under_minority","Latitude","Longitude")
-
-# Keep only complete cases
-cleaned_ed_data = na.omit(ed_data[,predictor_names])
-#cleaned_ed_data$acgr_max1 = cleaned_ed_data$acgr / 100
-#cleaned_ed_data$acgr_arcsin = asin(sqrt(cleaned_ed_data$acgr_max1))
-
-# Divide the cleaned data set into a training set and a validation set
+# Divide the data set into (1) training set and (2) validation set
 set.seed(1)
-indices_for_training = get_indices_for_training_set(cleaned_ed_data, 0.20)
+proportion_of_data_as_training = 0.20
+indices_for_training = get_indices_for_training_set(cleaned_ed_data, proportion_of_data_as_training)
 training_data = cleaned_ed_data[indices_for_training,]
 validation_data = get_test_set(cleaned_ed_data,indices_for_training)
 ```
 
 ``` {r, warning=FALSE}
-# Create a model
+# Create a linear regression model
 ed_model = lm(acgr~ InstrExpend + Lunch + StudentTeacher + under_minority + pctELL + UrbanLocale, data = training_data)
 summary(ed_model)
 #x11(); par(mfrow=c(2,2));
