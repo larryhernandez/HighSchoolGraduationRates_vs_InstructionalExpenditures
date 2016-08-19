@@ -55,7 +55,7 @@ output: word_document
 ## Appendix
 The following is a list of the data sources and corresponding URLs for the predictors used in this study.
 
-[1] ACGR School Year 2012-2013 Data:  
+[1] Adjusted Cohort Graduate Rates for School Year 2012-2013:
 http://www2.ed.gov/about/inits/ed/edfacts/data-files/acgr-lea-sy2012-13.csv
 
 [2] NCES 2013 Data for Income and Poverty:
@@ -66,300 +66,218 @@ http://nces.ed.gov/ccd/elsi/tableGenerator.aspx?savedTableID=16594
 http://nces.ed.gov/ccd/elsi/tableGenerator.aspx?savedTableID=36934
 
 ```{r, echo=FALSE, warning=FALSE}
-
 # Clear workspace
 rm(list=ls())
 
-# Set working directory
-setwd("E:/Math/STAT_333_AppliedRegression/Project/R_code/")
+# For reproducibility
+set.seed(1)
 
 # Load libraries and functions with R script
-source("E:/Math/STAT_333_AppliedRegression/Project/R_code/load_libraries_functions.R")
+source("load_libraries_functions.R")
 
 # Load school district data from disk with R script
 source("load_project_data.R")
 
-# Aggregate and clean the data
+# Aggregate and clean the data. The dataframe of interest after this step is called 'ed_data'
 source("aggregate_and_clean_data.R")
 
-# Define the predictors of interest
-predictors = c("leaid12","FIPST","acgr","income","StudentTeacher","InstrExpend","pctFedRevToTotal","pctInstrExpOfDaily","SSvcOfDayCost", "UrbanLocale","Lunch","pctELL","under_minority","Latitude","Longitude")
+# Define predictors of interest
+predictors = c("FIPST","leaid12","acgr","InstrExpend","StudentTeacher","income","White","UrbanLocale","Latitude","Longitude")
 
-# Extract predictors of interest, keeping only the complete cases
-cleaned_ed_data = na.omit(ed_data[,predictors])
+# Extract predictors of interest
+modeling_data = ed_data[,predictors]
 
 # Divide the data set into (1) training set and (2) validation set
-set.seed(1)
 proportion_of_data_as_training = 0.20
-indices_for_training = get_indices_for_training_set(cleaned_ed_data, proportion_of_data_as_training)
-training_data = cleaned_ed_data[indices_for_training,]
-validation_data = get_test_set(cleaned_ed_data,indices_for_training)
-```
+indices_for_training = get_indices_for_training_set(modeling_data, proportion_of_data_as_training)
+training_data = modeling_data[indices_for_training,]
+validation_data = get_test_set(modeling_data,indices_for_training)
+########################## Create a regression model & predict ##########################
+ed_model_holdout = lm(acgr~ InstrExpend + StudentTeacher + income + White + UrbanLocale + I(Latitude * Longitude) - leaid12 - FIPST, data = training_data)
+summary(ed_model_holdout)
 
-``` {r, warning=FALSE}
-# Create a linear regression model
-ed_model = lm(acgr~ InstrExpend + Lunch + StudentTeacher + under_minority + pctELL + UrbanLocale, data = training_data)
+ed_model = glm(acgr~ InstrExpend + StudentTeacher + income + White + UrbanLocale + I(Latitude * Longitude) - leaid12 - FIPST, data = modeling_data)
 summary(ed_model)
-#x11(); par(mfrow=c(2,2));
-#plot(lm.model)
-```
+x11(); par(mfrow=c(2,2)); plot(ed_model)
 
-
-``` {r, echo = FALSE, warning=FALSE}
 # Use model to predict on validation set and calculate prediction error
-acgr_predicts = predict(ed_model, validation_data)
-validation_mse = mean( (acgr_predicts - validation_data$acgr)^2, na.rm = TRUE)
+acgr_predictions = predict(ed_model, validation_data)
+validation_mse = mean( (acgr_predictions - validation_data$acgr)^2, na.rm = TRUE)
 
-# Non-Parametric Bootstrap
-n <- nrow(training_data)      ## number of observations
-B <- 1000              ## number of bootstrap samples
-set.seed(1)
+# Cross validation error (to compare with )
+cv.error.10 = cv.glm(ed_data,ed_model,K=10)$delta[1]
+
+########################### Non-Parametric Bootstrap  #########################
+#n <- nrow(training_data)    ## number of observations
+n <- nrow(modeling_data)    ## number of observations
+B <- 1000                   ## number of bootstrap samples
+#set.seed(1)
 nonpara.bootstrap.ests <- numeric(B)
 nonpara.bootstrap.b0 <- numeric(B)
 
 for(i in 1:B)
 {
   bootstrap.inds <- sample(n, n, TRUE)
-  mod.boot <- lm(acgr[bootstrap.inds] ~ InstrExpend[bootstrap.inds] + Lunch[bootstrap.inds] + StudentTeacher[bootstrap.inds]                  + under_minority[bootstrap.inds] + pctELL[bootstrap.inds] + UrbanLocale[bootstrap.inds], data=training_data)
+  mod.boot <- lm(acgr[bootstrap.inds] ~ InstrExpend[bootstrap.inds] + StudentTeacher[bootstrap.inds] +       
+              income[bootstrap.inds] + White[bootstrap.inds] + UrbanLocale[bootstrap.inds], data=modeling_data)
   betas.star <- coef(mod.boot)
   nonpara.bootstrap.ests[i] <- betas.star[2]
   nonpara.bootstrap.b0[i] <- betas.star[1]
 }
 
-# x11()
-# nonpara_hist = hist(nonpara.bootstrap.ests, main = expression(paste("Nonparametric Bootstrap Dist. of Instructional Expenditures*")), xlab = expression(paste('Instructional Expenditures',', ',hat(beta)[1],'*')))
-# center = mean(nonpara.bootstrap.ests)
-# height_at_center = 300
-# abline(v = center, col = 2, lwd=2)
-# segments(center, height_at_center/2, center + sd(nonpara.bootstrap.ests), height_at_center/2, col = "darkgreen", lwd=2)
-# legend("topright", c(expression(paste(hat(beta)[1],'*')), expression(paste("SE(", hat(beta)[1], "*)"))), bty="n", lwd=2, col=c("red", "darkgreen", "white"))
+# Plot Nonparametric bootstrap of Beta1 (i.e. Coefficient of Instructional Expenditures)
+x11()
+nonpara_hist = hist(nonpara.bootstrap.ests, main = expression(paste("Nonparametric Bootstrap Dist. of Instructional Expenditures*")), xlab = expression(paste('Instructional Expenditures',', ',hat(beta)[1],'*')))
+center = mean(nonpara.bootstrap.ests)
+height_at_center = 300
+abline(v = center, col = 2, lwd=2)
+segments(center, height_at_center/2, center + sd(nonpara.bootstrap.ests), height_at_center/2, col = "darkgreen", lwd=2)
+legend("topright", c(expression(paste(hat(beta)[1],'*')), expression(paste("SE(", hat(beta)[1], "*)"))), bty="n", lwd=2, col=c("red", "darkgreen", "white"))
 
-# if (center > 0){
-#   p_value_nonpara_boot = sum(nonpara.bootstrap.ests < 0) / B
-# }else{
-#   p_value_nonpara_boot = sum(nonpara.bootstrap.ests > 0) / B
-# }
-# 
-# sd_b1 = sd(nonpara.bootstrap.ests)
-# p_value_b1 = pt(mean(nonpara.bootstrap.ests) / sd_b1, B-2)*2
-
-
-# x11()
-# nonpara_hist = hist(nonpara.bootstrap.b0, main = expression(paste("Nonparametric Bootstrap Dist. of Intercept*")), xlab = expression(paste('Intercept',', ',hat(beta)[0],'*')))
-# center = mean(nonpara.bootstrap.b0)
-# height_at_center = 300
-# abline(v = center, col = 2, lwd=2)
-# segments(center, height_at_center/2, center + sd(nonpara.bootstrap.b0), height_at_center/2, col = "darkgreen", lwd=2)
-# legend("topright", c(expression(paste(hat(beta)[0],'*')), expression(paste("SE(", hat(beta)[0], "*)"))), bty="n", lwd=2, col=c("red", "darkgreen", "white"))
-
-# if (center > 0){
-#   p_value_nonpara_boot = sum(nonpara.bootstrap.b0 < 0) / B
-# }else{
-#   p_value_nonpara_boot = sum(nonpara.bootstrap.b0 > 0) / B
-# }
-
-#sd_b0 = sd(nonpara.bootstrap.b0)
-#p_value_b0 = pt(mean(nonpara.bootstrap.b0) / sd_b0, B-2)*2
-
-```
+# calculate p-value of beta1 (i.e. Coefficient of Instructional Expenditures)
+if (center > 0){
+  p_value_nonpara_boot = sum(nonpara.bootstrap.ests < 0) / B
+  }else{
+  p_value_nonpara_boot = sum(nonpara.bootstrap.ests > 0) / B
+  }
+sd_b1 = sd(nonpara.bootstrap.ests)
+p_value_b1 = pt(mean(nonpara.bootstrap.ests) / sd_b1, B-2)*2
 
 
+# Plot Nonparametric bootstrap of Intercept (i.e. Grad Rates of non-White students in large cities)
+x11()
+nonpara_hist = hist(nonpara.bootstrap.b0, main = expression(paste("Nonparametric Bootstrap Dist. of Intercept*")), xlab = expression(paste('Intercept',', ',hat(beta)[0],'*')))
+center = mean(nonpara.bootstrap.b0)
+height_at_center = 300
+abline(v = center, col = 2, lwd=2)
+segments(center, height_at_center/2, center + sd(nonpara.bootstrap.b0), height_at_center/2, col = "darkgreen", lwd=2)
+legend("topright", c(expression(paste(hat(beta)[0],'*')), expression(paste("SE(", hat(beta)[0], "*)"))), bty="n", lwd=2, col=c("red", "darkgreen", "white"))
 
-```{r, echo=FALSE, warning=FALSE}
-# lm.ed_model1 = lm(acgr_arcsin~InstrExpend, data = training_data)
-# summary(lm.ed_model1)
-# x11();
-# plot(training_data$InstrExpend,training_data$acgr_arcsin)
-# points(training_data$InstrExpend,predict(lm.ed_model1),col='red')
+# Estimate p-value of intercept
+if (center > 0){
+   p_value_nonpara_boot = sum(nonpara.bootstrap.b0 < 0) / B
+}else{
+  p_value_nonpara_boot = sum(nonpara.bootstrap.b0 > 0) / B
+}
 
-# This might be the model to pursue!
-# lm.ed_model_logx = lm(1/acgr~log(InstrExpend), data = training_data)
-# summary(lm.ed_model_logx)
-# x11();
-# plot(training_data$InstrExpend,1/training_data$acgr)
-# points(training_data$InstrExpend,predict(lm.ed_model_logx),col='red')
-# x11();
-# par(mfrow=c(2,2)); 
-# plot(lm.ed_model_logx)
+sd_b0 = sd(nonpara.bootstrap.b0)
+print(sd_b0)
+p_value_b0 = pt(mean(nonpara.bootstrap.b0) / sd_b0, B-2)*2
 
+################# Sandwich estimation for variance & p-values due to heteroskedasticity ########################
 
-# lm.ed_model2 = lm(acgr~InstrExpend + income, data = training_data)
-# summary(lm.ed_model2)
-# anova(lm.ed_model1, lm.ed_model2)
-# 
-# lm.ed_model3 = lm(acgr~InstrExpend + income + StudentTeacher, data = training_data)
-# summary(lm.ed_model3)
-# anova(lm.ed_model2, lm.ed_model3)
-# 
-# lm.ed_model4 = lm(acgr~InstrExpend + income + StudentTeacher + under_minority, data = training_data)
-# summary(lm.ed_model4)
-# anova(lm.ed_model3, lm.ed_model4)
-# 
-# lm.ed_model5 = lm(acgr~InstrExpend + income + StudentTeacher + under_minority + pctELL, data = training_data)
-# summary(lm.ed_model5)
-# anova(lm.ed_model4, lm.ed_model5)
-# x11()
-# par(mfrow=c(2,2))
-# plot(lm.ed_model5)
-# 
-# 
-# lm.ed_model_transform = lm(acgr ~ log(InstrExpend) + log(income) + StudentTeacher + pctELL + under_minority + lo(Latitude, Longitude, span = .2), data = training_data)
-# summary(lm.ed_model_transform)
-# x11()
-# par(mfrow=c(2,2))
-# plot(lm.ed_model_transform)
-# 
-# 
-# lm.ed_model_transform = lm(log(1/acgr) ~ log(InstrExpend) + log(income) + StudentTeacher + pctELL + lo(Latitude, Longitude, span = .2), data = training_data)
-# summary(lm.ed_model_transform)
-# x11()
-# par(mfrow=c(2,2))
-# plot(lm.ed_model_transform)
-# 
-# 
-# lm.ed_model_transform2 = lm(log(acgr) ~ log(InstrExpend) + log(income) + StudentTeacher + pctELL +  lo(Latitude, Longitude, span = .2), data = training_data)
-# summary(lm.ed_model_transform2)
-# x11()
-# par(mfrow=c(2,2))
-# plot(lm.ed_model_transform2)
-# 
-# ##############################################
-# lm.ed_model6 = lm(acgr~InstrExpend + log(income) + StudentTeacher + White + pctELL + lo(Latitude, Longitude, span = .2), data = training_data)
-# summary(lm.ed_model6)
-# anova(lm.ed_model5, lm.ed_model6)
-# x11()
-# par(mfrow=c(2,2))
-# plot(lm.ed_model6)
-# 
-# 
-# g1=gam(acgr~lo(InstrExpend) + lo(income) + lo(StudentTeacher) + lo(White) + lo(pctELL) + lo(Latitude, Longitude, span = .2), data= training_data)
-# summary(g1)
-# anova(lm.ed_model5,g1)
-# x11()
-# par(mfrow=c(2,2))
-# plot(g1)
-# 
-# 
-# lm.ed_model7 = lm(acgr~InstrExpend + income + StudentTeacher + White + pctELL + UrbanLocale, data = training_data)
-# summary(lm.ed_model7)
-# anova(lm.ed_model5, lm.ed_model7)
+# intercept
+coeff_index = 1
+variance_b0 = vcovHC(ed_model, type = "HC")[coeff_index,coeff_index]
+dnorm(ed_model$coef[coeff_index]/sqrt(variance_b0))
 
-### GAM
-# gam.model6 = gam(acgr ~ lo(InstrExpend) + lo(income) + StudentTeacher + lo(under_minority) + pctELL + UrbanLocale, data = training_data)
-# summary(gam.model6)
-# anova(gam.model5,gam.model6)
+# InstrExpend
+coeff_index = 2
+variance_b1 = vcovHC(ed_model, type = "HC")[coeff_index,coeff_index]
+dnorm(ed_model$coef[coeff_index]/sqrt(variance_b1))
 
-# predictions = predict.gam(gam.model6,validation_data)
-# mspe_gam = mean( (predictions - validation_data$acgr)^2, na.rm = TRUE)
-```
+# StudentTeacher
+coeff_index = 3
+variance_b2 = vcovHC(ed_model, type = "HC")[coeff_index,coeff_index]
+dnorm(ed_model$coef[coeff_index]/sqrt(variance_b2))
+
+# income
+coeff_index = 4
+variance_b3 = vcovHC(ed_model, type = "HC")[coeff_index,coeff_index]
+dnorm(ed_model$coef[coeff_index]/sqrt(variance_b3))
+
+# White
+coeff_index = 5
+variance_b4 = vcovHC(ed_model, type = "HC")[coeff_index,coeff_index]
+dnorm(ed_model$coef[coeff_index]/sqrt(variance_b4))
+
+# UrbanLocale12-City: Mid-size 
+coeff_index = 6    # 7-16 yield results for other levels of UrbanLocale
+variance_b5 = vcovHC(ed_model, type = "HC")[coeff_index,coeff_index]
+dnorm(ed_model$coef[coeff_index]/sqrt(variance_b5))
+
+# Interaction(Latitude,Longitude)
+coeff_index = 17    # 7-16 yield results for other levels of UrbanLocale
+variance_b17 = vcovHC(ed_model, type = "HC")[coeff_index,coeff_index]
+dnorm(ed_model$coef[coeff_index]/sqrt(variance_b17))
 
 
-```{r, echo=FALSE, warning=FALSE}
-# De-aggregate data into separate groups: CA, WI
-# indices_ca       = which(cleaned_ed_data$FIPST == 6)
-# indices_wi       = which(cleaned_ed_data$FIPST == 55)
-# ca_data = cleaned_ed_data[indices_ca,]
-# wi_data = cleaned_ed_data[indices_wi,]
+#################### Spatial Maps ####################
+
+# Load Unified School Districts: California
+shape_file_unified_ca <-"C:/Users/Larry/Desktop/Shapefiles/from_government_site/california/tl_2013_06_unsd_extracted/tl_2013_06_unsd.shp"
+sh_unified_ca <- readShapePoly(shape_file_unified_ca)
  
-# Fit the model with 'ca_data'
-# n = nrow(ca_data)
-# lm.model_ca = lm(acgr ~ InstrExpend + Lunch + StudentTeacher + under_minority + pctELL + UrbanLocale, data=ca_data)
- 
-# Make predictions using selected model and calculate training MSE
-# predictions_wi <-predict(lm.model_ca,wi_data)
-# mspe_wi = mean( (predictions_wi - wi_data$acgr)^2, na.rm = TRUE)
-
-# Plot the predictions and the actual outcomes for WI
-#Load Unified School District Polygons: Wisconsin
-# shape_file_unified_wi <-"C:/Users/Larry/Desktop/Shapefiles/from_government_site/wisconsin/tl_2013_55_unsd_extracted/tl_2013_55_unsd.shp"
-# sh_unified_wi <- readShapePoly(shape_file_unified_wi)
-
-# # Load Secondary School District Polygons: Wisconsin
-# shape_file_secondary_wi <-"C:/Users/Larry/Desktop/Shapefiles/from_government_site/wisconsin/tl_2013_55_scsd_extracted/tl_2013_55_scsd.shp"
-# sh_secondary_wi <- readShapePoly(shape_file_secondary_wi)
-
-##### Subset the acgr data
-# wi_indices = which(cleaned_ed_data$FIPST == 55)
-# wi_data_to_plot = subset(cleaned_ed_data[wi_indices,],select=c("leaid12","acgr"))
-#map_ssd_unsd_acgr(sh_secondary_wi,sh_unified_wi,wi_data_to_plot,lm.model_ca, title_content="WI")
-
-```
+# Load Secondary School District Polygons: California
+shape_file_secondary_ca <-"C:/Users/Larry/Desktop/Shapefiles/from_government_site/california/tl_2015_06_scsd_extracted/tl_2015_06_scsd.shp"
+sh_secondary_ca <- readShapePoly(shape_file_secondary_ca)
 
 
-
-```{r,echo=FALSE, warning=FALSE}
-
-##### Diagnostic plots
-#x11()
-#plot(final_model)
-#dev.off()
-
-##### Spatial Maps
-#Load Shapefiles: Secondary School Districts & Unified School Districts
-# shapefile_secondary <-"E:/Math/STAT_333_AppliedRegression/Project/Shapefiles/unified_and_secondary_school_districts/secondary_districts_2013/sdsecondary2013_TIGER_nationwide.shp"
-# shape_secondary <- readShapePoly(shapefile_secondary)
-# 
-# # 
-# shapefile_unified <-"E:/Math/STAT_333_AppliedRegression/Project/Shapefiles/unified_and_secondary_school_districts/unified_districts_2013/sdunified2013_TIGER_nationwide.shp"
-# shape_unified <- readShapePoly(shapefile_unified)
-
-# Load Unified School District Polygons: California
-# shape_file_unified_ca <-"C:/Users/Larry/Desktop/Shapefiles/from_government_site/california/tl_2013_06_unsd_extracted/tl_2013_06_unsd.shp"
-# sh_unified_ca <- readShapePoly(shape_file_unified_ca)
-# 
-# # Load Secondary School District Polygons: California
-# shape_file_secondary_ca <-"C:/Users/Larry/Desktop/Shapefiles/from_government_site/california/tl_2015_06_scsd_extracted/tl_2015_06_scsd.shp"
-# sh_secondary_ca <- readShapePoly(shape_file_secondary_ca)
+# Extract CA data & Visualize Measured & Predicted ACGR as well as residuals
+ca_indices      = which(modeling_data$FIPST == 6)
+ca_data         = modeling_data[ca_indices,]
+ca_data_to_plot = subset(modeling_data[ca_indices,],select=c("leaid12","acgr"))
+sh_ca_secondary_with_acgr <- merge_data_with_shape(sh_secondary_ca,ca_data_to_plot,"GEOID","leaid12")
+sh_ca_unified_with_acgr   <- merge_data_with_shape(sh_unified_ca, ca_data_to_plot,"GEOID","leaid12")
+map_ssd_unsd_acgr(sh_secondary_ca,sh_unified_ca,ca_data,ed_model, title_content="CA")
 
 
-##### Subset the acgr data
-# ed_data_to_plot = subset(cleaned_ed_data,select=c("leaid12","acgr"))
+#map_shape_file(sh_ca_secondary_with_acgr, ca_data$acgr, ca_data$leaid12, acgr_title, add_plot = FALSE)
+#map_shape_file(sh_ca_unified_with_acgr,ca_data$acgr, ca_data$leaid12, acgr_title, add_plot = TRUE)
+
+#wi_indices      = which(modeling_data$FIPST == 55)
+#wi_data_to_plot = subset(modeling_data[wi_indices,],select=c("leaid12","acgr"))
+
+#ed_data_to_plot = subset(modeling_data,select=c("leaid12","acgr"))
 # sh_secondary_with_acgr <- merge_data_with_shape(shape_secondary,ed_data_to_plot,"GEOID","leaid12")
 # sh_unified_with_acgr   <- merge_data_with_shape(shape_unified, ed_data_to_plot,"GEOID","leaid12")
+
+##### Subset the acgr data
+# ed_data_to_plot = subset(modeling_data,select=c("leaid12","acgr"))
+# sh_secondary_with_acgr <- merge_data_with_shape(shape_secondary,ed_data_to_plot,"GEOID","leaid12")
+# sh_unified_with_acgr   <- merge_data_with_shape(shape_unified, ed_data_to_plot,"GEOID","leaid12")
+
+# map_ssd_unsd_acgr(sh_secondary_wi,sh_unified_wi,wi_data_to_plot,lm.model_ca, title_content="WI")
+
+################################################ Various plots #########################################################
 
 # Map outcome of interest (i.e. acgr)
 # x11()
 # acgr_title = "Measured Adj. Cohort Grad. Rates"
-# map_shape_file(sh_secondary_with_acgr, cleaned_ed_data$acgr, cleaned_ed_data$leaid12, acgr_title, add_plot = FALSE)
-# map_shape_file(sh_unified_with_acgr,cleaned_ed_data$acgr, cleaned_ed_data$leaid12, acgr_title, add_plot = TRUE)
+# map_shape_file(sh_secondary_with_acgr, modeling_data$acgr, modeling_data$leaid12, acgr_title, add_plot = FALSE)
+# map_shape_file(sh_unified_with_acgr,modeling_data$acgr, modeling_data$leaid12, acgr_title, add_plot = TRUE)
 
 
 # Map predicted values of acgr
 # x11()
-# predicted_acgr = predict.lm(ed_model,cleaned_ed_data)
+# predicted_acgr = predict.lm(ed_model,modeling_data)
 # pred_title = "Predicted Adj. Cohort Grad. Rates"
-# map_shape_file(sh_secondary_with_acgr, predicted_acgr, cleaned_ed_data$leaid12, pred_title, add_plot = FALSE)
-# map_shape_file(sh_unified_with_acgr, predicted_acgr, cleaned_ed_data$leaid12, pred_title, add_plot = TRUE)
+# map_shape_file(sh_secondary_with_acgr, predicted_acgr, modeling_data$leaid12, pred_title, add_plot = FALSE)
+# map_shape_file(sh_unified_with_acgr, predicted_acgr, modeling_data$leaid12, pred_title, add_plot = TRUE)
 
 # 
 # # Map residuals
 # x11()
 # title = "Residuals"
-# map_shape_file(sh_secondary_with_acgr, ed_model$residuals, cleaned_ed_data$leaid12, title, add_plot = FALSE)
-# map_shape_file(sh_unified_with_acgr, ed_model$residuals, cleaned_ed_data$leaid12, title, add_plot = TRUE)
+# map_shape_file(sh_secondary_with_acgr, ed_model$residuals, modeling_data$leaid12, title, add_plot = FALSE)
+# map_shape_file(sh_unified_with_acgr, ed_model$residuals, modeling_data$leaid12, title, add_plot = TRUE)
 
-# Map a few variables of interest: income, InstrExpend, StudentTeacher, Lunch, pctELL
+# Map a few variables of interest: income, InstrExpend, StudentTeacher, pctELL
 #x11()
 #title = "Median Household Income"
-#map_shape_file(sh_secondary_with_acgr, cleaned_ed_data$income, cleaned_ed_data$leaid12, title, add_plot = FALSE)
-#map_shape_file(sh_unified_with_acgr, cleaned_ed_data$income, cleaned_ed_data$leaid12, title, add_plot = TRUE)
+#map_shape_file(sh_secondary_with_acgr, modeling_data$income, modeling_data$leaid12, title, add_plot = FALSE)
+#map_shape_file(sh_unified_with_acgr, modeling_data$income, modeling_data$leaid12, title, add_plot = TRUE)
 #dev.off()
 
 #x11()
 #title = "Instructional Expenditures Per Student"
-#map_shape_file(sh_secondary_with_acgr, cleaned_ed_data$InstrExpend, cleaned_ed_data$leaid12, title, add_plot = FALSE)
-#map_shape_file(sh_unified_with_acgr, cleaned_ed_data$InstrExpend, cleaned_ed_data$leaid12, title, add_plot = TRUE)
-#dev.off()
-
-#x11()
-#title = "Percentage of Students Receiving Free or Reduced Lunch"
-#map_shape_file(sh_secondary_with_acgr,cleaned_ed_data$Lunch, cleaned_ed_data$leaid12, title, add_plot = FALSE)
-#map_shape_file(sh_unified_with_acgr, cleaned_ed_data$Lunch, cleaned_ed_data$leaid12, title, #add_plot = TRUE)
+#map_shape_file(sh_secondary_with_acgr, modeling_data$InstrExpend, modeling_data$leaid12, title, add_plot = FALSE)
+#map_shape_file(sh_unified_with_acgr, modeling_data$InstrExpend, modeling_data$leaid12, title, add_plot = TRUE)
 #dev.off()
 
 #x11()
 #title = "Percentage of Students who are English Language Learners"
-#map_shape_file(sh_secondary_with_acgr,cleaned_ed_data$pctELL, cleaned_ed_data$leaid12, title, add_plot = #FALSE)
-#map_shape_file(sh_unified_with_acgr, cleaned_ed_data$pctELL, cleaned_ed_data$leaid12, title, add_plot = #TRUE)
+#map_shape_file(sh_secondary_with_acgr,modeling_data$pctELL, modeling_data$leaid12, title, add_plot = #FALSE)
+#map_shape_file(sh_unified_with_acgr, modeling_data$pctELL, modeling_data$leaid12, title, add_plot = #TRUE)
 #dev.off()
 ```
