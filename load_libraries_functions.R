@@ -12,6 +12,13 @@ library(splines)
 library(foreach)
 library(mgcv)
 library(sandwich)
+library(leaflet)
+library(magrittr)
+library(maps)
+library(htmltools)
+library(rgdal) # to reading/writing geo shapefiles
+library(rgeos) # for shapefile simplification
+
 
 # Load user defined functions
 source("convert_income_id_to_integer.R")
@@ -29,3 +36,8 @@ source("get_indices_for_training_set.R")
 source("get_test_set.R")
 source("determine_imputed_numeric_value.R")
 source("fill_with_median.R")
+source("fill_missing_values_by_category.R")
+source("impute_missing_values.R")
+source("fill_na_with_value.R")
+source("remove_records.R")
+source("linear_scale.R")

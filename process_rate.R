@@ -31,6 +31,6 @@ process_rate<-function(rate_as_factor){
       }
   } else {
     # When rate is neither a numeric nor a character variable identify it by returning the value -1
-      return(-1)
+      return(NA)
   }
 }
