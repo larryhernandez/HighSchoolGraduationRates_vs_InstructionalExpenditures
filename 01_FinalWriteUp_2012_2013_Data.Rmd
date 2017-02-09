@@ -2,7 +2,7 @@
 title: Do Lower Instructional Expenditures Lead to Higher 4-Year Public High School Graduation Rates in the U.S.?
 author: "Larry Hernandez"
 date: "May 5, 2016"
-output: word_document
+output: html_document
 ---
 ## Introduction
   With the national public high school 4-year adjusted cohort graduation rate (ACGR) in the United States residing at 81.4% $^{\dag}$, with the lowest rate of 71.7% held by Georgia and the highest rate of 89.7% claimed by Iowa, it is no surprise that many people would like to direct more money into the public education system. After all, it is commonly thought that more money in schools will translate into increased student achievement, and in particular more graduates. Educational expenses that are often targeted by this frame of thought include instructional supplies, instructional services, and teacher compensation, collectively known as instructional expenditures.  
@@ -33,7 +33,7 @@ output: word_document
     
   The MLR model was chosen since these types of models generally perform reasonably well at capturing relationships between variables of interest, even those that are nonlinear, and are well-suited for interpretation, the primary goal of this work. The specific predictors chosen here were readily available and some have suspected to be related to high school graduation rates. The model was fit on a random 20% sample of the data set, and using this fit, the mean squared prediction error was calculated on the remaining 80% of the data. To test the model against perturbation, it was fit on california data and used to predict wisconsin ACGR.
     
-    A nonparametric bootstrap with 1,000 iterations was performed to estimate the coefficient for Instructional Expenditures per Student and the intercept term. This same bootstrap was used to obtain estimates for the standard deviations of these coefficients. The nonparametric version was utilized since the true underlying relationship between the predictors and outcome are likely not linear. 
+  A nonparametric bootstrap with 1,000 iterations was performed to estimate the coefficient for Instructional Expenditures per Student and the intercept term. This same bootstrap was used to obtain estimates for the standard deviations of these coefficients. The nonparametric version was utilized since the true underlying relationship between the predictors and outcome are likely not linear. 
     
 ## Results
   The summary of the estimated coefficients for this MLR model (Table 1) indicates p-values that are nearly zero for Instructional Expenditures and most of the other predictors, suggesting statistically significant relationships between these predictors and the outcome. The Adjusted R-squared value of 0.38 indicates that 38% of the variation is explained by the  model. The estimated coefficient for the primary predictor, Instructional Expenditures, is -0.001 with a standard error of 1.18e-4, and a highly significant p-value smaller than 2e-16. The intercept, which describes the average graduation rate for White or Asian students from large cities is 115%, with a variance of 2.6%. This value for the intercept is clearly bogus and indicates problems with this model.
@@ -82,29 +82,134 @@ source("load_project_data.R")
 source("aggregate_and_clean_data.R")
 
 # Define predictors of interest
-predictors = c("FIPST","leaid12","acgr","InstrExpend","StudentTeacher","income","White","UrbanLocale","Latitude","Longitude")
+#predictors = c("FIPST","leaid12","acgr","InstrExpend","StudentTeacher","income","White","UrbanLocale","Latitude","Longitude")
+
+cols_for_model = c("STNAM","FIPST","leaid12","acgr","InstrExpend","StudentTeacher","income","White","pctELL","UrbanLocale","Latitude","Longitude")
+
+features = c("acgr","InstrExpend","StudentTeacher","income","White","pctELL","UrbanLocale","Latitude","Longitude")
+
+cols_for_tableau = c("STNAM","FIPST","LEANM","leaid12","acgr", "InstrExpend","income","WhiteCount","BlackCount","AsianPacificCount","HispanicCount","FirstNationsCount", "MultiRacialCount","TotalRace","White","nonWhite","under_minority","StudentTeacher","pctELL","Lunch","UrbanLocale","Latitude","Longitude")
 
 # Extract predictors of interest
-modeling_data = ed_data[,predictors]
+modeling_data = ed_data[,cols_for_model]
+#source("leaflet_test.R")
+
+# Write data to csv
+#output_csv = "C:/Users/Larry/graduation_rates/clean_ed_data.csv"
+#write.csv(ed_data[,cols_for_tableau],file=output_csv)
+
+
+# Scale graduation rates to reside between 0 and 1
+#modeling_data$acgr = modeling_data$acgr / 100
+#modeling_data$pctELL = modeling_data$pctELL / 100
+#modeling_data$White = modeling_data$White / 100
 
 # Divide the data set into (1) training set and (2) validation set
 proportion_of_data_as_training = 0.20
 indices_for_training = get_indices_for_training_set(modeling_data, proportion_of_data_as_training)
 training_data = modeling_data[indices_for_training,]
 validation_data = get_test_set(modeling_data,indices_for_training)
-########################## Create a regression model & predict ##########################
-ed_model_holdout = lm(acgr~ InstrExpend + StudentTeacher + income + White + UrbanLocale + I(Latitude * Longitude) - leaid12 - FIPST, data = training_data)
-summary(ed_model_holdout)
 
-ed_model = glm(acgr~ InstrExpend + StudentTeacher + income + White + UrbanLocale + I(Latitude * Longitude) - leaid12 - FIPST, data = modeling_data)
-summary(ed_model)
-x11(); par(mfrow=c(2,2)); plot(ed_model)
+########################################################################################## ##########################################################################################
+##################                                             ###########################
+################## Create statistical model & make predictions ###########################
+##################                                             ###########################
+##########################################################################################
+##########################################################################################
+#### NOTE: LOOK INTO USING THE 'under_rep_minority' VARIABLE INSTEAD OF 'White'; ALSO CONSIDER USING OTHER VARIABLES ####
 
-# Use model to predict on validation set and calculate prediction error
-acgr_predictions = predict(ed_model, validation_data)
+x11();
+plot(modeling_data$InstrExpend,modeling_data$acgr, xlab ="Instructional Expenditures Per Student", ylab = "ACGR")
+
+x11();
+plot(modeling_data$income / 50000,modeling_data$acgr, xlab ="Median Income", ylab = "ACGR")
+
+x11();
+plot(training_data$income / 50000,training_data$acgr / 100, xlab ="Median Income", ylab = "ACGR", col='yellow')
+x = seq(1.05,5,.025)
+y = 1.15 + 1/(1-(x+2))
+points(x,y,col='blue')
+print(max(y))
+
+ dx = 0.05
+ x = seq(1+dx,5,dx)
+ y = log(x-1)
+ x11();
+ plot(x,log(x-1)+1,col='red')
+ points(x,log10(x-1)+1,col='blue')
+ points(x,logb(x-1,100)+1,col='pink')
+ points(x,logb(x-1,2)+1,col='green')
+ # 
+
+ x11();
+# plot(x,y,col='red')
+# points(x,log10(x-1),col='blue')
+ y = (logb(x-1,100)+1)
+ c = 1/max(y)
+ 
+ y2 = (logb(x-1,100)+1)
+ c2 = 1 #/max(y2)
+ plot(x,c*y,col='green')
+ points(x,c2*y2,col='red')
+ points(training_data$income/50000,training_data$acgr / 100, xlab ="Median Income", ylab = "ACGR", col='black')
+
+##################################################################################
+################################  Logarithmic estimate  ########################## ##################################################################################
+
+ log_est = lm(acgr~ log(income), data = training_data)
+summary(log_est)
+log_pred = predict(log_est, training_data)
+
+
+x11();
+plot(training_data$income,training_data$acgr, xlab ="Median Income", ylab = "ACGR",pch = 20, col='red')
+x = sort(training_data$income)
+curve(coef(log_est)[1] + coef(log_est)[2]*log(x),add=TRUE,col=4, lwd=4)
+title(main = "Income vs ACGR with logarithmic fit")
+
+log_est2 = lm(acgr~ log(income) + InstrExpend, data = training_data)
+summary(log_est2)
+log_pred2 = predict(log_est2, training_data)
+
+
+log_estn = lm(acgr~ log(income) + InstrExpend + White, data = training_data)
+summary(log_estn)
+predictions = predict(log_estn, validation_data)
+validation_mse = mean( (predictions - validation_data$acgr)^2, na.rm = TRUE)
+
+
+######################################## Hyperbola estimate ########################################
+hyperbola_est = lm(acgr ~ 1/(1-income), data = training_data)
+hyperbola_pred = predict(hyperbola_est, training_data)
+b = coef(hyperbola_est)[1]
+m = coef(hyperbola_est)[2]
+x11();
+plot(x, b + 1.16/(1-x),col=4, lwd=4)
+#plot(training_data$income,training_data$acgr, xlab ="Median Income", ylab = "ACGR", pch = 20, col='black')
+#curve(b + m*1/(x),add=TRUE,col=4, lwd=4)
+title(main = "Income vs ACGR with hyperbolic fit")
+
+
+lin_model_2 = glm(acgr~ InstrExpend + income - leaid12 - FIPST, data = training_data)
+summary(lin_model_2)
+
+lin_model_3 = glm(acgr~ InstrExpend + income + White - leaid12 - FIPST, data = training_data)
+summary(lin_model_3)
+
+lin_model_4 = glm(acgr~ InstrExpend + income + White + StudentTeacher - leaid12 - FIPST, data = training_data)
+summary(lin_model_4)
+
+lin_model_5 = glm(acgr~ InstrExpend + income + White + StudentTeacher - leaid12 - FIPST, data = training_data)
+summary(lin_model_5)
+
+lin_model_6 = glm(acgr~ InstrExpend + income + White + StudentTeacher + UrbanLocale - leaid12 - FIPST, data = training_data)
+summary(lin_model_6)
+
+# Predict on validation set, calculate prediction error
+acgr_predictions = predict(lin_model, validation_data)
 validation_mse = mean( (acgr_predictions - validation_data$acgr)^2, na.rm = TRUE)
 
-# Cross validation error (to compare with )
+# Cross validation error (to compare with)
 cv.error.10 = cv.glm(ed_data,ed_model,K=10)$delta[1]
 
 ########################### Non-Parametric Bootstrap  #########################
@@ -164,7 +269,7 @@ sd_b0 = sd(nonpara.bootstrap.b0)
 print(sd_b0)
 p_value_b0 = pt(mean(nonpara.bootstrap.b0) / sd_b0, B-2)*2
 
-################# Sandwich estimation for variance & p-values due to heteroskedasticity ########################
+######## Sandwich estimation for variance & p-values due to heteroskedasticity #######
 
 # intercept
 coeff_index = 1
@@ -203,7 +308,6 @@ dnorm(ed_model$coef[coeff_index]/sqrt(variance_b17))
 
 
 #################### Spatial Maps ####################
-
 # Load Unified School Districts: California
 shape_file_unified_ca <-"C:/Users/Larry/Desktop/Shapefiles/from_government_site/california/tl_2013_06_unsd_extracted/tl_2013_06_unsd.shp"
 sh_unified_ca <- readShapePoly(shape_file_unified_ca)
@@ -212,15 +316,27 @@ sh_unified_ca <- readShapePoly(shape_file_unified_ca)
 shape_file_secondary_ca <-"C:/Users/Larry/Desktop/Shapefiles/from_government_site/california/tl_2015_06_scsd_extracted/tl_2015_06_scsd.shp"
 sh_secondary_ca <- readShapePoly(shape_file_secondary_ca)
 
-
 # Extract CA data & Visualize Measured & Predicted ACGR as well as residuals
 ca_indices      = which(modeling_data$FIPST == 6)
 ca_data         = modeling_data[ca_indices,]
 ca_data_to_plot = subset(modeling_data[ca_indices,],select=c("leaid12","acgr"))
 sh_ca_secondary_with_acgr <- merge_data_with_shape(sh_secondary_ca,ca_data_to_plot,"GEOID","leaid12")
 sh_ca_unified_with_acgr   <- merge_data_with_shape(sh_unified_ca, ca_data_to_plot,"GEOID","leaid12")
-map_ssd_unsd_acgr(sh_secondary_ca,sh_unified_ca,ca_data,ed_model, title_content="CA")
+x11()
+map_ssd_unsd_acgr(sh_secondary_ca,sh_unified_ca,ca_data,modeling_data, title_content="CA")
 
+
+ca_map <-leaflet(sh_ca_unified_with_acgr) %>%
+#  addPolygons(
+#    stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5,
+#    color = ~colorQuantile("YlOrRd", #sh_ca_unified_with_acgr$acgr)(acgr)
+#  ) %>%
+  addPolygons(
+    stroke = FALSE, fillOpacity = 0.5, smoothFactor = 0.5,
+    color = ~colorQuantile("YlOrRd", sh_ca_secondary_with_acgr$acgr)(acgr)
+  )
+
+ca_map
 
 #map_shape_file(sh_ca_secondary_with_acgr, ca_data$acgr, ca_data$leaid12, acgr_title, add_plot = FALSE)
 #map_shape_file(sh_ca_unified_with_acgr,ca_data$acgr, ca_data$leaid12, acgr_title, add_plot = TRUE)
