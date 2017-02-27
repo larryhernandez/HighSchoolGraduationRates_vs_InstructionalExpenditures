@@ -5,4 +5,4 @@ Inferential statistical learning project focused on modeling the relationship be
 Lower instructional expenditures per student may lead to higher 4-year adjusted cohort graduation rates (ACGR) in U.S. public high school districts. Lower instructional expenditures would require schools to be innovative with their curricula in ways that promote student achievement and also require schools to employ the type of teachers who are willing to get paid lower salaries.
 
 # Final Report
-See '00_Final_Report.pdf' in the list above to view the final write-up.
+Still in progress.

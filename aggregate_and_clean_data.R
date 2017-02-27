@@ -132,4 +132,4 @@ no_Long = which(is.na(ed_data$Longitude))
 ed_data = remove_records(ed_data,no_Lat)
 
 ######################### Remove any incomplete cases at this point  ###########################################
-#ed_data = na.omit(ed_data)
+ed_data = na.omit(ed_data)
